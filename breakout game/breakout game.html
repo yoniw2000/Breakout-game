@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <title>Breakout game</title>
+    <link rel="stylesheet" type="text/css" href="breakout game.css">
+
+    </head>
+
+    <body onload="" onkeydown="movepong(event)" onclick="mouseclick(event)" onmousemove="mouseMoveHandler(event)">
+
+        <canvas id="myCanvas" width="1050" height="600"></canvas>
+        <p id="start_lable">press any key to start. i for instructions</p>
+        <!--<p id="score"></p>-->
+
+        <link href="https://fonts.googleapis.com/css?family=Electrolize&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+
+        <script>
+            var canvas = document.getElementById("myCanvas");
+            var ctx = canvas.getContext("2d");
+            var game_on = false;
+            var score = 0;
+
+            var paddleHeight = 10;
+            var paddleWidth = 100;
+            var paddleX = (canvas.width - paddleWidth) / 2;
+
+
+            var bricks = [];
+            for (var c = 0; c < 11; c++) {
+                bricks[c] = [];
+                for (var r = 0; r < 7; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1, color: 0 };
+                }
+            }
+
+            //document.getElementById("score").style.visibility = "hidden";
+            //==========================BALL======================================
+            var ballcolor = "#0095DD";
+            var x = canvas.width / 2;
+            var y = canvas.height - 30;
+
+            var dx = +2;
+            var dy = -2;
+
+            function drawBall() {
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = ballcolor;
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBall();
+                drawPaddle();
+                drawBricks();
+                collisionDetection();
+                if (x + dx > canvas.width - 10 || x + dx < 10) {
+                    dx = -dx;
+                }
+                if (y + dy < 10) {
+                    dy = -dy;
+                }
+                else if (y + dy > canvas.height - 10) {//paddle hit ball
+                    if (x > paddleX && x < paddleX + paddleWidth) {
+                        dy = -dy;
+                    }
+                    else {//  ball hit floor
+                        alert("GAME OVER");
+                        document.location.reload();
+                        clearInterval(interval);
+                    }
+                }
+
+                if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                    paddleX += 3;
+                }
+                else if (leftPressed && paddleX > 0) {
+                    paddleX -= 3;
+                }
+
+                x += dx;
+                y += dy;
+            }
+            //==========================bricks======================================
+
+
+
+            function drawPaddle() {
+                ctx.beginPath();
+                ctx.rect(paddleX, canvas.height - 10, 100, 75);
+                ctx.fillStyle = "#0095DD";
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            function collisionDetection() {
+                for (var c = 0; c < 11; c++) {
+                    for (var r = 0; r < 7; r++) {
+                        var b = bricks[c][r];
+                        if (x > b.x && x < b.x + 80 && y > b.y && y < b.y + 40 && b.status == 1) {
+                            dy = -dy;
+                            b.status = 0;
+                            ballcolor = bricks[c][r].color;
+                            score += 1;
+                            var audio = new Audio();
+                            audio.src = "sounds/pong.mp3"
+                            audio.play();
+                        }
+                    }
+                }
+            }
+
+            assgin_colors();
+            function assgin_colors() {
+                for (var c = 0; c < 11; c++) {
+                    for (var r = 0; r < 7; r++) {
+                        if (bricks[c][r].status == 1) {
+                            bricks[c][r].color = get_rnd_color();
+                        }
+                    }
+                }
+            }
+
+            function drawBricks() {
+                for (var c = 0; c < 11; c++) {
+                    for (var r = 0; r < 7; r++) {
+                        if (bricks[c][r].status == 1) {
+                            var brickX = (c * (90)) + 30;
+                            var brickY = (r * (50)) + 30;
+                            bricks[c][r].x = brickX;
+                            bricks[c][r].y = brickY;
+                            ctx.beginPath();
+                            ctx.rect(brickX, brickY, 70, 30);
+                            ctx.fillStyle = bricks[c][r].color;
+                            ctx.fill();
+                            ctx.closePath();
+                        }
+                    }
+                }
+            }
+
+            function mouseclick() {
+                //var x = event.clientX;     // Get the horizontal coordinate
+                //var y = event.clientY;     // Get the vertical coordinate
+                //var coor = "X coords: " + x + ", Y coords: " + y;
+                //alert(coor)
+            }
+
+
+
+            var rightPressed = false;
+            var leftPressed = false;
+
+            function movepong(event) {
+                if (game_on == false && event.keyCode != 73) {
+                    document.getElementById("start_lable").style.visibility = "hidden";
+                    setInterval(draw, 10);
+                    game_on = true;
+                   // document.getElementById("score").style.visibility = "visible";
+                    //updatescore()
+                }
+                if (game_on == false && event.keyCode == 73) {
+                    Swal.fire({
+                        title: 'simple brackout game ',
+                        text: 'right: a , s-stay , d-down or you can use the mouse ',
+                    })
+                }
+                if (event.keyCode == 68) {//d
+                    rightPressed = true;
+                    leftPressed = false;
+                }
+                if (event.keyCode == 65) {//a
+                    rightPressed = false;
+                    leftPressed = true;
+                }
+                if (event.keyCode == 83) {//s
+                    rightPressed = false;
+                    leftPressed = false;
+                }
+            }
+
+            function get_rnd_color() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+            function getRndSpeed() {
+                var speeds = [4, 2, 3, -4, -2, -3];
+                return speeds[Math.floor(Math.random() * speeds.length)];
+            }
+            //function updatescore() {
+               // document.getElementById("score").innerHTML = score;
+            //}
+            function check_gameover() {
+                if (score == 70) {
+                    alert("congratulations you win!")
+                    document.location.reload();
+                    clearInterval(interval);
+                }
+
+            }
+
+            function mouseMoveHandler(e) {
+                if (rightPressed == false && leftPressed == false) {
+                    var relativeX = e.clientX - canvas.offsetLeft;
+                    if (relativeX > 0 && relativeX < canvas.width) {
+                        paddleX = relativeX - paddleWidth / 2;
+                    }
+                }
+            }
+
+        </script>
+
+
+    </body>
+    </html>
+
